@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:untitled3/regScreen.dart';
-
+import 'regScreen.dart';
 import 'loginScreen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -9,35 +8,37 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     body: Container(
-       height: double.infinity,
-       width: double.infinity,
-       decoration: const BoxDecoration(
-         gradient: LinearGradient(
-           colors: [
-             Color(0xffB81736),
-             Color(0xff281537),
-           ]
-         )
-       ),
-       child: Column(
-         children: [
-           const Padding(
-             padding: EdgeInsets.only(top: 200.0),
-             child: Image(image: AssetImage('assets/logo.png')),
-           ),
-           const SizedBox(
-             height: 100,
-           ),
-           const Text('Welcome Back',style: TextStyle(
-             fontSize: 30,
-             color: Colors.white
-           ),),
-          const SizedBox(height: 30,),
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(colors: [
+            Color.fromARGB(255, 0, 0, 0),
+            Color.fromARGB(255, 0, 0, 0),
+          ]),
+        ),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 100.0),
+            child: Image(
+              image: AssetImage('assets/icons/logo.png'),
+              width: 180, // Ajusta el tamaño de la imagen aquí
+            ),
+          ),
+          const SizedBox(
+            height: 100,
+          ),
+          const Text(
+            'BARBERIA ORION',
+            style: TextStyle(fontSize: 30, color: Colors.white),
+          ),
+          const SizedBox(
+            height: 30,
+          ),
           GestureDetector(
-            onTap: (){
+            onTap: () {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const loginScreen()));
+                  MaterialPageRoute(builder: (context) => const LoginScreen()));
             },
             child: Container(
               height: 53,
@@ -46,39 +47,46 @@ class WelcomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: Colors.white),
               ),
-              child: const Center(child: Text('SIGN IN',style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white
-              ),),),
+              child: const Center(
+                child: Text(
+                  'INICIAR SESION',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+              ),
             ),
           ),
-           const SizedBox(height: 30,),
-           GestureDetector(
-             onTap: (){
-               Navigator.push(context,
-                   MaterialPageRoute(builder: (context) => const RegScreen()));
-             },
-             child: Container(
-               height: 53,
-               width: 320,
-               decoration: BoxDecoration(
-                 color: Colors.white,
-                 borderRadius: BorderRadius.circular(30),
-                 border: Border.all(color: Colors.white),
-               ),
-               child: const Center(child: Text('SIGN UP',style: TextStyle(
-                   fontSize: 20,
-                   fontWeight: FontWeight.bold,
-                   color: Colors.black
-               ),),),
-             ),
-           ),
-           
-          ]
-       ),
-     ),
-
+          const SizedBox(
+            height: 30,
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const RegScreen()));
+            },
+            child: Container(
+              height: 53,
+              width: 320,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white),
+              ),
+              child: const Center(
+                child: Text(
+                  'REGISTRARSE',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+              ),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }
