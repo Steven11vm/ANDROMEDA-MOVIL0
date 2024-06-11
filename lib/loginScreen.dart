@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'crud.dart';
+import 'regScreen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -24,6 +25,7 @@ class LoginScreen extends StatelessWidget {
           builder: (context) => AlertDialog(
             title: Text('Error'),
             content: Text('Correo o contraseña incorrecta'),
+            backgroundColor: Colors.white,
             actions: [
               TextButton(
                 onPressed: () {
@@ -52,7 +54,7 @@ class LoginScreen extends StatelessWidget {
           child: const Padding(
             padding: EdgeInsets.only(top: 60.0, left: 22),
             child: Text(
-              'BIENVENIDO',
+              'INICIAR SESION',
               style: TextStyle(
                   fontSize: 30,
                   color: Colors.white,
@@ -149,23 +151,32 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(
                     height: 150,
                   ),
-                  const Align(
+                  Align(
                     alignment: Alignment.bottomRight,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          "No tienes cuenta?",
+                          "NO TIENES UNA CUENTA?",
                           style: TextStyle(
                               fontWeight: FontWeight.bold, color: Colors.grey),
                         ),
-                        Text(
-                          "Registrate",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                              color: Colors.black),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const RegScreen()),
+                            );
+                          },
+                          child: Text(
+                            "REGISTRATE",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                                color: Colors.black),
+                          ),
                         ),
                       ],
                     ),

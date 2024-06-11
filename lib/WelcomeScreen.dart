@@ -18,8 +18,8 @@ class WelcomeScreen extends StatelessWidget {
           ]),
         ),
         child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 100.0),
+          const Padding(
+            padding: EdgeInsets.only(top: 100.0),
             child: Image(
               image: AssetImage('assets/icons/logo.png'),
               width: 180, // Ajusta el tamaño de la imagen aquí
