@@ -193,13 +193,13 @@ class _CrudScreenState extends State<CrudScreen> {
     // Abre un formulario de edición y envía los datos a la API para actualizarlos
   }
 
-  void _eliminarItem(Map<String, dynamic> item) {
+  void _eliminarItem(Map<String, dynamic> id) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Confirmar Eliminación'),
-          content: Text('¿Estás seguro de eliminar ${item['nombreProducto']}?'),
+          content: Text('¿Estás seguro de eliminar ${id['nombreProducto']}?'),
           actions: [
             TextButton(
               onPressed: () {
