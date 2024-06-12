@@ -314,6 +314,71 @@ class _CrudScreenState extends State<CrudScreen> {
     );
   }
 
+<<<<<<< HEAD
+=======
+  void _eliminarItem(Map<String, dynamic> item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmar Eliminación'),
+          content: Text('¿Estás seguro de eliminar ${item['nombreProducto']}?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Envía una solicitud DELETE a la API para eliminar el elemento
+                _deleteItem(item);
+                Navigator.of(context).pop();
+              },
+              child: Text('Eliminar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteItem(Map<String, dynamic> item) async {
+    try {
+      final response = await http.delete(
+          Uri.parse('http://localhost:5179/api/Exportacion/${item['id']}'));
+      if (response.statusCode == 200) {
+        // Eliminación exitosa
+        setState(() {
+          _data.remove(item); // Remover el elemento de la lista local
+        });
+      } else {
+        throw Exception('Fallo en eliminar');
+      }
+    } catch (error) {
+      print('Error al eliminar: $error');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Se produjo un error al eliminar el elemento.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+>>>>>>> 05278af18428d71ef37d5cc985b0b73cdeaa9ff8
   void _registrarItem() {
     showDialog(
       context: context,
