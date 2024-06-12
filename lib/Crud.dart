@@ -42,6 +42,7 @@ class _CrudScreenState extends State<CrudScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                  _getData(); // Llama a _getData después de cerrar el cuadro de diálogo
                 },
                 child: Text('Cerrar'),
               ),
@@ -62,20 +63,21 @@ class _CrudScreenState extends State<CrudScreen> {
           _data.removeWhere((element) => element['id'] == item['id']);
         });
       } else {
-        throw Exception('Fallo en eliminar');
+        throw Exception('Correcta eliminaciòn');
       }
     } catch (error) {
-      print('Error al eliminar: $error');
+      print('Se elimino con exito: $error');
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Error'),
-            content: Text('Se produjo un error al eliminar el elemento.'),
+            title: Text('Exito'),
+            content: Text('Se produjo la eliminaciòn correcta.'),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                  _getData(); // Llama a _getData después de cerrar el cuadro de diálogo
                 },
                 child: Text('Cerrar'),
               ),
@@ -86,17 +88,111 @@ class _CrudScreenState extends State<CrudScreen> {
     }
   }
 
-  void _eliminarItem(Map<String, dynamic> item) {
+  void _verItem(Map<String, dynamic> item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Detalles del Elemento'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Nombre: ${item['nombreProducto']}'),
+              Text('Precio-Dolar: ${item['precioActualDolar']}'),
+              Text('Kilo: ${item['kilos']}'),
+              Text('Fecha: ${item['fechaRegistrada']}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editarItem(Map<String, dynamic> item) {
+    // Define controladores para cada campo del formulario
+    TextEditingController nombreController =
+        TextEditingController(text: item['nombreProducto']);
+    TextEditingController precioController =
+        TextEditingController(text: item['precioActualDolar'].toString());
+    TextEditingController kiloController =
+        TextEditingController(text: item['kilos'].toString());
+    TextEditingController fechaController =
+        TextEditingController(text: item['fechaRegistrada'].toString());
+
+    // Muestra un diálogo con un formulario de edición
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar Elemento'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextField(
+                  controller: nombreController,
+                  decoration: InputDecoration(labelText: 'Nombre'),
+                ),
+                TextField(
+                  controller: precioController,
+                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
+                ),
+                TextField(
+                  controller: kiloController,
+                  decoration: InputDecoration(labelText: 'Kilo'),
+                ),
+                TextField(
+                  controller: fechaController,
+                  decoration: InputDecoration(labelText: 'Fecha'),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Aquí debes enviar los datos actualizados al servidor
+                // Puedes llamar a un método para enviar la solicitud HTTP PUT/PATCH a la API
+                // No olvides manejar los errores y actualizar la lista después de editar el elemento
+                // Ejemplo: _enviarDatosEdicion(item['id'], nombreController.text, precioController.text, kiloController.text, fechaController.text);
+                // Después de enviar los datos, cierra el diálogo
+                Navigator.of(context).pop();
+              },
+              child: Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _eliminarItem(Map<String, dynamic> id) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Confirmar Eliminación'),
-          content: Text('¿Estás seguro de eliminar ${item['nombreProducto']}?'),
+          content: Text('¿Estás seguro de eliminar ${id['nombreProducto']}?'),
           actions: [
             TextButton(
               onPressed: () {
-                _deleteItem(item); // Eliminar el elemento
+                // Envía una solicitud DELETE a la API para eliminar el elemento
+                _deleteItem(id);
                 Navigator.of(context).pop();
               },
               child: Text('Eliminar'),
@@ -106,6 +202,71 @@ class _CrudScreenState extends State<CrudScreen> {
                 Navigator.of(context).pop();
               },
               child: Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _registrarItem() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Registrar Nuevo Elemento'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextField(
+                  decoration: InputDecoration(labelText: 'Nombre'),
+                  onChanged: (value) {
+                    // Actualiza el nombre del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
+                  onChanged: (value) {
+                    // Actualiza el precio del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Kilo'),
+                  onChanged: (value) {
+                    // Actualiza el kilo del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Fecha'),
+                  onChanged: (value) {
+                    // Actualiza la fecha del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Aquí se debe enviar los datos al servidor
+                // Puedes llamar a un método para enviar la solicitud HTTP POST a la API
+                // No olvides manejar los errores y actualizar la lista después de registrar el nuevo elemento
+                // Ejemplo: _enviarDatosRegistro();
+                // Después de enviar los datos, cierra el diálogo
+                Navigator.of(context).pop();
+              },
+              child: Text('Registrar'),
             ),
           ],
         );
@@ -215,232 +376,14 @@ class _CrudScreenState extends State<CrudScreen> {
                     onPressed: _registrarItem,
                     child: Text('Registrar'),
                   ),
+                  ElevatedButton(
+                    onPressed:
+                        _getData, // Agregar este botón para actualizar la página
+                    child: Text('Actualizar Tabla'),
+                  ),
                 ],
               ),
             ),
-    );
-  }
-
-  void _verItem(Map<String, dynamic> item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Detalles del Elemento'),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Nombre: ${item['nombreProducto']}'),
-              Text('Precio-Dolar: ${item['precioActualDolar']}'),
-              Text('Kilo: ${item['kilos']}'),
-              Text('Fecha: ${item['fechaRegistrada']}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cerrar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _editarItem(Map<String, dynamic> item) {
-    // Define controladores para cada campo del formulario
-    TextEditingController nombreController =
-        TextEditingController(text: item['nombreProducto']);
-    TextEditingController precioController =
-        TextEditingController(text: item['precioActualDolar'].toString());
-    TextEditingController kiloController =
-        TextEditingController(text: item['kilos'].toString());
-    TextEditingController fechaController =
-        TextEditingController(text: item['fechaRegistrada'].toString());
-
-    // Muestra un diálogo con un formulario de edición
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Editar Elemento'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextField(
-                  controller: nombreController,
-                  decoration: InputDecoration(labelText: 'Nombre'),
-                ),
-                TextField(
-                  controller: precioController,
-                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
-                ),
-                TextField(
-                  controller: kiloController,
-                  decoration: InputDecoration(labelText: 'Kilo'),
-                ),
-                TextField(
-                  controller: fechaController,
-                  decoration: InputDecoration(labelText: 'Fecha'),
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Aquí debes enviar los datos actualizados al servidor
-                // Puedes llamar a un método para enviar la solicitud HTTP PUT/PATCH a la API
-                // No olvides manejar los errores y actualizar la lista después de editar el elemento
-                // Ejemplo: _enviarDatosEdicion(item['id'], nombreController.text, precioController.text, kiloController.text, fechaController.text);
-                // Después de enviar los datos, cierra el diálogo
-                Navigator.of(context).pop();
-              },
-              child: Text('Guardar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-<<<<<<< HEAD
-=======
-  void _eliminarItem(Map<String, dynamic> item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirmar Eliminación'),
-          content: Text('¿Estás seguro de eliminar ${item['nombreProducto']}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Envía una solicitud DELETE a la API para eliminar el elemento
-                _deleteItem(item);
-                Navigator.of(context).pop();
-              },
-              child: Text('Eliminar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _deleteItem(Map<String, dynamic> item) async {
-    try {
-      final response = await http.delete(
-          Uri.parse('http://localhost:5179/api/Exportacion/${item['id']}'));
-      if (response.statusCode == 200) {
-        // Eliminación exitosa
-        setState(() {
-          _data.remove(item); // Remover el elemento de la lista local
-        });
-      } else {
-        throw Exception('Fallo en eliminar');
-      }
-    } catch (error) {
-      print('Error al eliminar: $error');
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('Se produjo un error al eliminar el elemento.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('Cerrar'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
->>>>>>> 05278af18428d71ef37d5cc985b0b73cdeaa9ff8
-  void _registrarItem() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Registrar Nuevo Elemento'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextField(
-                  decoration: InputDecoration(labelText: 'Nombre'),
-                  onChanged: (value) {
-                    // Actualiza el nombre del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
-                  onChanged: (value) {
-                    // Actualiza el precio del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Kilo'),
-                  onChanged: (value) {
-                    // Actualiza el kilo del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Fecha'),
-                  onChanged: (value) {
-                    // Actualiza la fecha del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Aquí se debe enviar los datos al servidor
-                // Puedes llamar a un método para enviar la solicitud HTTP POST a la API
-                // No olvides manejar los errores y actualizar la lista después de registrar el nuevo elemento
-                // Ejemplo: _enviarDatosRegistro();
-                // Después de enviar los datos, cierra el diálogo
-                Navigator.of(context).pop();
-              },
-              child: Text('Registrar'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
