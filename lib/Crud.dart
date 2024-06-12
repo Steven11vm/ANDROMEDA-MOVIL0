@@ -287,7 +287,9 @@ class _CrudScreenState extends State<CrudScreen> {
           Uri.parse('http://localhost:5179/api/Exportacion/${item['id']}'));
       if (response.statusCode == 200) {
         // Eliminación exitosa
-        _getData(); // Actualizar la lista después de eliminar
+        setState(() {
+          _data.remove(item); // Remover el elemento de la lista local
+        });
       } else {
         throw Exception('Fallo en eliminar');
       }
