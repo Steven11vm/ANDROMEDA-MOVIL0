@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -138,7 +137,9 @@ class _CrudScreenState extends State<CrudScreen> {
                               ),
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _eliminarItem(item),
+                                onPressed: () {
+                                  _eliminarItem(item);
+                                },
                               ),
                             ],
                           ),
@@ -203,8 +204,8 @@ class _CrudScreenState extends State<CrudScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                // Implementa la lógica para eliminar el item
-                // Haz una solicitud a la API para eliminar el elemento
+                // Envía una solicitud DELETE a la API para eliminar el elemento
+                _deleteItem(item);
                 Navigator.of(context).pop();
               },
               child: Text('Eliminar'),
@@ -219,6 +220,38 @@ class _CrudScreenState extends State<CrudScreen> {
         );
       },
     );
+  }
+
+  Future<void> _deleteItem(Map<String, dynamic> item) async {
+    try {
+      final response = await http.delete(
+          Uri.parse('http://localhost:5179/api/Exportacion/${item['id']}'));
+      if (response.statusCode == 200) {
+        // Eliminación exitosa
+        _getData(); // Actualizar la lista después de eliminar
+      } else {
+        throw Exception('Fallo en eliminar');
+      }
+    } catch (error) {
+      print('Error al eliminar: $error');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Se produjo un error al eliminar el elemento.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void _registrarItem() {
