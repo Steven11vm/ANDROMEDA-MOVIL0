@@ -190,8 +190,67 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _editarItem(Map<String, dynamic> item) {
-    // Implementa la lógica para editar el item
-    // Abre un formulario de edición y envía los datos a la API para actualizarlos
+    // Define controladores para cada campo del formulario
+    TextEditingController nombreController =
+        TextEditingController(text: item['nombreProducto']);
+    TextEditingController precioController =
+        TextEditingController(text: item['precioActualDolar'].toString());
+    TextEditingController kiloController =
+        TextEditingController(text: item['kilos'].toString());
+    TextEditingController fechaController =
+        TextEditingController(text: item['fechaRegistrada'].toString());
+
+    // Muestra un diálogo con un formulario de edición
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Editar Elemento'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextField(
+                  controller: nombreController,
+                  decoration: InputDecoration(labelText: 'Nombre'),
+                ),
+                TextField(
+                  controller: precioController,
+                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
+                ),
+                TextField(
+                  controller: kiloController,
+                  decoration: InputDecoration(labelText: 'Kilo'),
+                ),
+                TextField(
+                  controller: fechaController,
+                  decoration: InputDecoration(labelText: 'Fecha'),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Aquí debes enviar los datos actualizados al servidor
+                // Puedes llamar a un método para enviar la solicitud HTTP PUT/PATCH a la API
+                // No olvides manejar los errores y actualizar la lista después de editar el elemento
+                // Ejemplo: _enviarDatosEdicion(item['id'], nombreController.text, precioController.text, kiloController.text, fechaController.text);
+                // Después de enviar los datos, cierra el diálogo
+                Navigator.of(context).pop();
+              },
+              child: Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _eliminarItem(Map<String, dynamic> item) {
@@ -255,7 +314,67 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _registrarItem() {
-    // Implementa la lógica para registrar un nuevo item
-    // Abre un formulario de registro y envía los datos a la API para registrarlos
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Registrar Nuevo Elemento'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                TextField(
+                  decoration: InputDecoration(labelText: 'Nombre'),
+                  onChanged: (value) {
+                    // Actualiza el nombre del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
+                  onChanged: (value) {
+                    // Actualiza el precio del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Kilo'),
+                  onChanged: (value) {
+                    // Actualiza el kilo del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(labelText: 'Fecha'),
+                  onChanged: (value) {
+                    // Actualiza la fecha del nuevo elemento
+                    // Puedes ignorar esto si ya tienes el controlador en la API
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Aquí se debe enviar los datos al servidor
+                // Puedes llamar a un método para enviar la solicitud HTTP POST a la API
+                // No olvides manejar los errores y actualizar la lista después de registrar el nuevo elemento
+                // Ejemplo: _enviarDatosRegistro();
+                // Después de enviar los datos, cierra el diálogo
+                Navigator.of(context).pop();
+              },
+              child: Text('Registrar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
