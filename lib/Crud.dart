@@ -63,16 +63,16 @@ class _CrudScreenState extends State<CrudScreen> {
           _data.removeWhere((element) => element['id'] == item['id']);
         });
       } else {
-        throw Exception('Correcta eliminaciòn');
+        throw Exception('Correcta eliminación');
       }
     } catch (error) {
-      print('Se elimino con exito: $error');
+      print('Se eliminó con éxito: $error');
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Exito'),
-            content: Text('Se produjo la eliminaciòn correcta.'),
+            title: Text('Éxito'),
+            content: Text('Se produjo la eliminación correcta.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -99,8 +99,8 @@ class _CrudScreenState extends State<CrudScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Nombre: ${item['nombreProducto']}'),
-              Text('Precio-Dolar: ${item['precioActualDolar']}'),
-              Text('Kilo: ${item['kilos']}'),
+              Text('Precio-Dólar: ${item['precioActualDolar']}'),
+              Text('Kilos: ${item['kilos']}'),
               Text('Fecha: ${item['fechaRegistrada']}'),
             ],
           ),
@@ -144,15 +144,17 @@ class _CrudScreenState extends State<CrudScreen> {
                 ),
                 TextField(
                   controller: precioController,
-                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
+                  decoration: InputDecoration(labelText: 'Precio-Dólar'),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: kiloController,
-                  decoration: InputDecoration(labelText: 'Kilo'),
+                  decoration: InputDecoration(labelText: 'Kilos'),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: fechaController,
-                  decoration: InputDecoration(labelText: 'Fecha'),
+                  decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
                 ),
               ],
             ),
@@ -166,12 +168,45 @@ class _CrudScreenState extends State<CrudScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Aquí debes enviar los datos actualizados al servidor
-                // Puedes llamar a un método para enviar la solicitud HTTP PUT/PATCH a la API
-                // No olvides manejar los errores y actualizar la lista después de editar el elemento
-                // Ejemplo: _enviarDatosEdicion(item['id'], nombreController.text, precioController.text, kiloController.text, fechaController.text);
-                // Después de enviar los datos, cierra el diálogo
-                Navigator.of(context).pop();
+                // Validar los datos antes de enviarlos
+                String nombre = nombreController.text;
+                double? precio = double.tryParse(precioController.text);
+                int? kilos = int.tryParse(kiloController.text);
+                String fecha = fechaController.text;
+
+                if (nombre.isEmpty ||
+                    precio == null ||
+                    kilos == null ||
+                    fecha.isEmpty) {
+                  // Mostrar un mensaje de error si los datos no son válidos
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Error'),
+                        content: Text('Por favor, ingresa datos válidos.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Cerrar'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  // Enviar los datos editados al servidor
+                  _enviarDatosEdicion(
+                    item['id'],
+                    nombre,
+                    precio,
+                    kilos,
+                    fecha,
+                  );
+                  Navigator.of(context).pop();
+                }
               },
               child: Text('Guardar'),
             ),
@@ -179,6 +214,56 @@ class _CrudScreenState extends State<CrudScreen> {
         );
       },
     );
+  }
+
+  Future<void> _enviarDatosEdicion(
+      int id, String nombre, double precio, int kilos, String fecha) async {
+    final editedItem = {
+      "id": id,
+      "nombreProducto": nombre,
+      "precioActualDolar": precio,
+      "kilos": kilos,
+      "fechaRegistrada": fecha,
+      "exportacion": true // Suponiendo que necesitas este campo
+    };
+
+    print('Enviando datos editados: $editedItem');
+
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:5179/api/Exportacion/$id'),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode(editedItem),
+      );
+
+      if (response.statusCode == 204) {
+        // Edición exitosa (status 204)
+        _getData();
+      } else {
+        print('Error en la edición: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Error al editar');
+      }
+    } catch (error) {
+      print('Error: $error');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Se produjo un error al editar el elemento.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   void _eliminarItem(Map<String, dynamic> id) {
@@ -210,6 +295,11 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _registrarItem() {
+    TextEditingController nombreController = TextEditingController();
+    TextEditingController precioController = TextEditingController();
+    TextEditingController kiloController = TextEditingController();
+    TextEditingController fechaController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -220,32 +310,22 @@ class _CrudScreenState extends State<CrudScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 TextField(
+                  controller: nombreController,
                   decoration: InputDecoration(labelText: 'Nombre'),
-                  onChanged: (value) {
-                    // Actualiza el nombre del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
                 ),
                 TextField(
-                  decoration: InputDecoration(labelText: 'Precio-Dolar'),
-                  onChanged: (value) {
-                    // Actualiza el precio del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
+                  controller: precioController,
+                  decoration: InputDecoration(labelText: 'Precio-Dólar'),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  decoration: InputDecoration(labelText: 'Kilo'),
-                  onChanged: (value) {
-                    // Actualiza el kilo del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
+                  controller: kiloController,
+                  decoration: InputDecoration(labelText: 'Kilos'),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  decoration: InputDecoration(labelText: 'Fecha'),
-                  onChanged: (value) {
-                    // Actualiza la fecha del nuevo elemento
-                    // Puedes ignorar esto si ya tienes el controlador en la API
-                  },
+                  controller: fechaController,
+                  decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
                 ),
               ],
             ),
@@ -259,11 +339,15 @@ class _CrudScreenState extends State<CrudScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Aquí se debe enviar los datos al servidor
-                // Puedes llamar a un método para enviar la solicitud HTTP POST a la API
-                // No olvides manejar los errores y actualizar la lista después de registrar el nuevo elemento
-                // Ejemplo: _enviarDatosRegistro();
-                // Después de enviar los datos, cierra el diálogo
+                // Validar y formatear la fecha
+                String formattedDate = fechaController.text;
+                // Aquí podrías agregar validaciones adicionales si es necesario
+                _enviarDatosRegistro(
+                  nombreController.text,
+                  double.parse(precioController.text),
+                  int.parse(kiloController.text),
+                  formattedDate,
+                );
                 Navigator.of(context).pop();
               },
               child: Text('Registrar'),
@@ -273,6 +357,55 @@ class _CrudScreenState extends State<CrudScreen> {
       },
     );
   }
+
+  Future<void> _enviarDatosRegistro(
+      String nombre, double precio, int kilos, String fecha) async {
+    final nuevoItem = {
+      "nombreProducto": nombre,
+      "precioActualDolar": precio,
+      "kilos": kilos,
+      "fechaRegistrada": fecha,
+      "exportacion": true // Suponiendo que necesitas este campo
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5179/api/Exportacion'),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode(nuevoItem),
+      );
+
+      if (response.statusCode == 201) {
+        // Registro exitoso
+        _getData();
+      } else {
+        print('Error en el registro: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Error al registrar');
+      }
+    } catch (error) {
+      print('Error: $error');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content:
+                Text('Se produjo un error al registrar el nuevo elemento.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+//
 
   @override
   Widget build(BuildContext context) {
@@ -288,9 +421,7 @@ class _CrudScreenState extends State<CrudScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(
-                    height: 20.0,
-                  ),
+                  const SizedBox(height: 20.0),
                   const Text(
                     'Exportaciones',
                     style: TextStyle(
@@ -300,9 +431,7 @@ class _CrudScreenState extends State<CrudScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(
-                    height: 20.0,
-                  ),
+                  SizedBox(height: 20.0),
                   DataTable(
                     headingRowColor: MaterialStateColor.resolveWith(
                         (states) => Colors.black),
@@ -315,12 +444,12 @@ class _CrudScreenState extends State<CrudScreen> {
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                       DataColumn(
-                          label: Text('Precio-Dolar',
+                          label: Text('Precio-Dólar',
                               style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                       DataColumn(
-                          label: Text('Kilo',
+                          label: Text('Kilos',
                               style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
@@ -369,9 +498,7 @@ class _CrudScreenState extends State<CrudScreen> {
                       ]);
                     }).toList(),
                   ),
-                  SizedBox(
-                    height: 20.0,
-                  ),
+                  SizedBox(height: 20.0),
                   ElevatedButton(
                     onPressed: _registrarItem,
                     child: Text('Registrar'),
