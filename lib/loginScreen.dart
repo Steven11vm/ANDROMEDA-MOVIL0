@@ -14,7 +14,7 @@ class LoginScreen extends StatelessWidget {
       final email = emailController.text;
       final password = passwordController.text;
 
-      if (email == 'StevenVilla10@gmail.com' && password == '123456789') {
+      if (email == '1' && password == '1') {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => CrudScreen()),

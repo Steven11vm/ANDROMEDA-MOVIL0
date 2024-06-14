@@ -10,11 +10,30 @@ class CrudScreen extends StatefulWidget {
 class _CrudScreenState extends State<CrudScreen> {
   List<Map<String, dynamic>> _data = [];
   bool _loading = true;
+  double _exchangeRate = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _fetchExchangeRate();
     _getData();
+  }
+
+  Future<void> _fetchExchangeRate() async {
+    try {
+      final response = await http
+          .get(Uri.parse('https://api.exchangerate-api.com/v4/latest/USD'));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(response.body);
+        setState(() {
+          _exchangeRate = jsonData['rates']['ARS'];
+        });
+      } else {
+        throw Exception('Error al obtener la tasa de cambio');
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
   }
 
   Future<void> _getData() async {
@@ -89,6 +108,7 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _verItem(Map<String, dynamic> item) {
+    final double priceInARS = item['precioActualDolar'] * _exchangeRate;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -100,8 +120,10 @@ class _CrudScreenState extends State<CrudScreen> {
             children: [
               Text('Nombre: ${item['nombreProducto']}'),
               Text('Precio-Dólar: ${item['precioActualDolar']}'),
+              Text('Precio-ARS: ${priceInARS.toStringAsFixed(2)}'),
               Text('Kilos: ${item['kilos']}'),
               Text('Fecha: ${item['fechaRegistrada']}'),
+              Text('Valor del dólar: $_exchangeRate'),
             ],
           ),
           actions: [
@@ -156,6 +178,7 @@ class _CrudScreenState extends State<CrudScreen> {
                   controller: fechaController,
                   decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
                 ),
+                Text('Valor del dólar: $_exchangeRate'),
               ],
             ),
           ),
@@ -276,7 +299,7 @@ class _CrudScreenState extends State<CrudScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                // Envía una solicitud DELETE a la API para eliminar el elemento
+                // Enviar solicitud DELETE al servidor
                 _deleteItem(id);
                 Navigator.of(context).pop();
               },
@@ -295,8 +318,10 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _registrarItem() {
+    // Define controladores para cada campo del formulario
     TextEditingController nombreController = TextEditingController();
-    TextEditingController precioController = TextEditingController();
+    TextEditingController precioController =
+        TextEditingController(text: _exchangeRate.toString());
     TextEditingController kiloController = TextEditingController();
     TextEditingController fechaController = TextEditingController();
 
@@ -317,6 +342,18 @@ class _CrudScreenState extends State<CrudScreen> {
                   controller: precioController,
                   decoration: InputDecoration(labelText: 'Precio-Dólar'),
                   keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    // Actualizar el campo de precio en ARS automáticamente
+                    if (_exchangeRate != 0.0) {
+                      double? precio = double.tryParse(value);
+                      if (precio != null) {
+                        setState(() {
+                          final precioARS = precio * _exchangeRate;
+                          print('Precio en ARS: $precioARS');
+                        });
+                      }
+                    }
+                  },
                 ),
                 TextField(
                   controller: kiloController,
@@ -327,6 +364,7 @@ class _CrudScreenState extends State<CrudScreen> {
                   controller: fechaController,
                   decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
                 ),
+                Text('Valor del dólar: $_exchangeRate'),
               ],
             ),
           ),
@@ -405,7 +443,6 @@ class _CrudScreenState extends State<CrudScreen> {
       );
     }
   }
-//
 
   @override
   Widget build(BuildContext context) {
@@ -427,14 +464,14 @@ class _CrudScreenState extends State<CrudScreen> {
                     style: TextStyle(
                       fontSize: 20.0,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Color.fromARGB(255, 0, 0, 0),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 20.0),
                   DataTable(
                     headingRowColor: MaterialStateColor.resolveWith(
-                        (states) => Colors.black),
+                        (states) => const Color.fromARGB(255, 255, 255, 255)),
                     dataRowColor: MaterialStateColor.resolveWith(
                         (states) => Colors.white),
                     columns: const <DataColumn>[
@@ -449,6 +486,11 @@ class _CrudScreenState extends State<CrudScreen> {
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                       DataColumn(
+                          label: Text('Precio-ARS',
+                              style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.black))),
+                      DataColumn(
                           label: Text('Kilos',
                               style: TextStyle(
                                   fontStyle: FontStyle.italic,
@@ -459,16 +501,20 @@ class _CrudScreenState extends State<CrudScreen> {
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                       DataColumn(
-                          label: Text('Actions',
+                          label: Text('Acciones',
                               style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                     ],
                     rows: _data.map((item) {
+                      final double priceInARS =
+                          item['precioActualDolar'] * _exchangeRate;
                       return DataRow(cells: [
                         DataCell(Text(item['nombreProducto'].toString(),
                             style: TextStyle(color: Colors.black))),
                         DataCell(Text(item['precioActualDolar'].toString(),
+                            style: TextStyle(color: Colors.black))),
+                        DataCell(Text(priceInARS.toStringAsFixed(2),
                             style: TextStyle(color: Colors.black))),
                         DataCell(Text(item['kilos'].toString(),
                             style: TextStyle(color: Colors.black))),
