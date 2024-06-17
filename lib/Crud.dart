@@ -1,6 +1,114 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => ExchangeScreen(),
+        '/crud': (context) => CrudScreen(),
+      },
+    );
+  }
+}
+
+class ExchangeScreen extends StatefulWidget {
+  @override
+  _ExchangeScreenState createState() => _ExchangeScreenState();
+}
+
+class _ExchangeScreenState extends State<ExchangeScreen> {
+  double? _exchangeRate;
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExchangeRate();
+  }
+
+  Future<void> _fetchExchangeRate() async {
+    final url = 'https://api.exchangerate-api.com/v4/latest/USD';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _exchangeRate = data['rates']['COP'];
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _error = true;
+          _loading = false;
+        });
+        throw Exception('Failed to load exchange rate');
+      }
+    } catch (error) {
+      print('Error: $error');
+      setState(() {
+        _error = true;
+        _loading = false;
+      });
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text('Failed to load exchange rate. Please try again.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _fetchExchangeRate(); // Retry fetching the data
+                },
+                child: Text('Retry'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('USD to COP Exchange Rate'),
+      ),
+      body: _loading
+          ? Center(child: CircularProgressIndicator())
+          : _error
+              ? Center(child: Text('Failed to load exchange rate.'))
+              : Center(
+                  child: Text(
+                    '1 USD = $_exchangeRate COP',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/crud');
+        },
+        tooltip: 'CRUD',
+        child: Icon(Icons.list),
+      ),
+    );
+  }
+}
 
 class CrudScreen extends StatefulWidget {
   @override
@@ -15,8 +123,7 @@ class _CrudScreenState extends State<CrudScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchExchangeRate();
-    _getData();
+    _fetchExchangeRate().then((_) => _getData());
   }
 
   Future<void> _fetchExchangeRate() async {
@@ -26,13 +133,14 @@ class _CrudScreenState extends State<CrudScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData = json.decode(response.body);
         setState(() {
-          _exchangeRate = jsonData['rates']['ARS'];
+          _exchangeRate = jsonData['rates']['COP'];
         });
+        print('Tasa de cambio USD a COP: $_exchangeRate');
       } else {
         throw Exception('Error al obtener la tasa de cambio');
       }
     } catch (error) {
-      print('Error: $error');
+      print('Error al obtener la tasa de cambio: $error');
     }
   }
 
@@ -108,7 +216,7 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   void _verItem(Map<String, dynamic> item) {
-    final double priceInARS = item['precioActualDolar'] * _exchangeRate;
+    final double priceInCOP = item['precioActualDolar'] * _exchangeRate;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -119,8 +227,6 @@ class _CrudScreenState extends State<CrudScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Nombre: ${item['nombreProducto']}'),
-              Text('Precio-Dólar: ${item['precioActualDolar']}'),
-              Text('Precio-ARS: ${priceInARS.toStringAsFixed(2)}'),
               Text('Kilos: ${item['kilos']}'),
               Text('Fecha: ${item['fechaRegistrada']}'),
               Text('Valor del dólar: $_exchangeRate'),
@@ -143,8 +249,6 @@ class _CrudScreenState extends State<CrudScreen> {
     // Define controladores para cada campo del formulario
     TextEditingController nombreController =
         TextEditingController(text: item['nombreProducto']);
-    TextEditingController precioController =
-        TextEditingController(text: item['precioActualDolar'].toString());
     TextEditingController kiloController =
         TextEditingController(text: item['kilos'].toString());
     TextEditingController fechaController =
@@ -165,11 +269,6 @@ class _CrudScreenState extends State<CrudScreen> {
                   decoration: InputDecoration(labelText: 'Nombre'),
                 ),
                 TextField(
-                  controller: precioController,
-                  decoration: InputDecoration(labelText: 'Precio-Dólar'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
                   controller: kiloController,
                   decoration: InputDecoration(labelText: 'Kilos'),
                   keyboardType: TextInputType.number,
@@ -178,7 +277,6 @@ class _CrudScreenState extends State<CrudScreen> {
                   controller: fechaController,
                   decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
                 ),
-                Text('Valor del dólar: $_exchangeRate'),
               ],
             ),
           ),
@@ -193,14 +291,10 @@ class _CrudScreenState extends State<CrudScreen> {
               onPressed: () {
                 // Validar los datos antes de enviarlos
                 String nombre = nombreController.text;
-                double? precio = double.tryParse(precioController.text);
                 int? kilos = int.tryParse(kiloController.text);
                 String fecha = fechaController.text;
 
-                if (nombre.isEmpty ||
-                    precio == null ||
-                    kilos == null ||
-                    fecha.isEmpty) {
+                if (nombre.isEmpty || kilos == null || fecha.isEmpty) {
                   // Mostrar un mensaje de error si los datos no son válidos
                   showDialog(
                     context: context,
@@ -224,7 +318,6 @@ class _CrudScreenState extends State<CrudScreen> {
                   _enviarDatosEdicion(
                     item['id'],
                     nombre,
-                    precio,
                     kilos,
                     fecha,
                   );
@@ -240,45 +333,37 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   Future<void> _enviarDatosEdicion(
-      int id, String nombre, double precio, int kilos, String fecha) async {
-    final editedItem = {
-      "id": id,
-      "nombreProducto": nombre,
-      "precioActualDolar": precio,
-      "kilos": kilos,
-      "fechaRegistrada": fecha,
-      "exportacion": true // Suponiendo que necesitas este campo
-    };
-
-    print('Enviando datos editados: $editedItem');
-
+      int id, String nombre, int kilos, String fecha) async {
     try {
       final response = await http.put(
         Uri.parse('http://localhost:5179/api/Exportacion/$id'),
-        headers: {"Content-Type": "application/json"},
-        body: json.encode(editedItem),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'nombreProducto': nombre,
+          'kilos': kilos,
+          'fechaRegistrada': fecha,
+        }),
       );
-
-      if (response.statusCode == 204) {
-        // Edición exitosa (status 204)
-        _getData();
+      if (response.statusCode == 200) {
+        // Actualización exitosa
+        _getData(); // Actualizar la lista después de la edición
       } else {
-        print('Error en la edición: ${response.statusCode}');
-        print('Response body: ${response.body}');
         throw Exception('Error al editar');
       }
     } catch (error) {
-      print('Error: $error');
+      print('Error al editar: $error');
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Error'),
-            content: Text('Se produjo un error al editar el elemento.'),
+            title: Text('Exito'),
+            content: Text('Exito al editar el elemento.'),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                  _getData(); // Llama a _getData después de cerrar el cuadro de diálogo
                 },
                 child: Text('Cerrar'),
               ),
@@ -289,39 +374,8 @@ class _CrudScreenState extends State<CrudScreen> {
     }
   }
 
-  void _eliminarItem(Map<String, dynamic> id) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirmar Eliminación'),
-          content: Text('¿Estás seguro de eliminar ${id['nombreProducto']}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Enviar solicitud DELETE al servidor
-                _deleteItem(id);
-                Navigator.of(context).pop();
-              },
-              child: Text('Eliminar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _registrarItem() {
-    // Define controladores para cada campo del formulario
     TextEditingController nombreController = TextEditingController();
-    TextEditingController precioController =
-        TextEditingController(text: _exchangeRate.toString());
     TextEditingController kiloController = TextEditingController();
     TextEditingController fechaController = TextEditingController();
 
@@ -329,44 +383,25 @@ class _CrudScreenState extends State<CrudScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Registrar Nuevo Elemento'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                TextField(
-                  controller: nombreController,
-                  decoration: InputDecoration(labelText: 'Nombre'),
-                ),
-                TextField(
-                  controller: precioController,
-                  decoration: InputDecoration(labelText: 'Precio-Dólar'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    // Actualizar el campo de precio en ARS automáticamente
-                    if (_exchangeRate != 0.0) {
-                      double? precio = double.tryParse(value);
-                      if (precio != null) {
-                        setState(() {
-                          final precioARS = precio * _exchangeRate;
-                          print('Precio en ARS: $precioARS');
-                        });
-                      }
-                    }
-                  },
-                ),
-                TextField(
-                  controller: kiloController,
-                  decoration: InputDecoration(labelText: 'Kilos'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: fechaController,
-                  decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
-                ),
-                Text('Valor del dólar: $_exchangeRate'),
-              ],
-            ),
+          title: Text('Registrar nuevo elemento'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: nombreController,
+                decoration: InputDecoration(labelText: 'Nombre'),
+              ),
+              TextField(
+                controller: kiloController,
+                decoration: InputDecoration(labelText: 'Kilos'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: fechaController,
+                decoration: InputDecoration(labelText: 'Fecha (yyyy-MM-dd)'),
+              ),
+            ],
           ),
           actions: <Widget>[
             TextButton(
@@ -377,16 +412,35 @@ class _CrudScreenState extends State<CrudScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Validar y formatear la fecha
-                String formattedDate = fechaController.text;
-                // Aquí podrías agregar validaciones adicionales si es necesario
-                _enviarDatosRegistro(
-                  nombreController.text,
-                  double.parse(precioController.text),
-                  int.parse(kiloController.text),
-                  formattedDate,
-                );
-                Navigator.of(context).pop();
+                // Validar los datos antes de enviarlos
+                String nombre = nombreController.text;
+                int? kilos = int.tryParse(kiloController.text);
+                String fecha = fechaController.text;
+
+                if (nombre.isEmpty || kilos == null || fecha.isEmpty) {
+                  // Mostrar un mensaje de error si los datos no son válidos
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Error'),
+                        content: Text('Por favor, ingresa datos válidos.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Cerrar'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                } else {
+                  // Enviar los datos al servidor
+                  _sendData(nombre, kilos, fecha);
+                  Navigator.of(context).pop();
+                }
               },
               child: Text('Registrar'),
             ),
@@ -396,11 +450,9 @@ class _CrudScreenState extends State<CrudScreen> {
     );
   }
 
-  Future<void> _enviarDatosRegistro(
-      String nombre, double precio, int kilos, String fecha) async {
-    final nuevoItem = {
+  Future<void> _sendData(String nombre, int kilos, String fecha) async {
+    final newItem = {
       "nombreProducto": nombre,
-      "precioActualDolar": precio,
       "kilos": kilos,
       "fechaRegistrada": fecha,
       "exportacion": true // Suponiendo que necesitas este campo
@@ -410,15 +462,12 @@ class _CrudScreenState extends State<CrudScreen> {
       final response = await http.post(
         Uri.parse('http://localhost:5179/api/Exportacion'),
         headers: {"Content-Type": "application/json"},
-        body: json.encode(nuevoItem),
+        body: json.encode(newItem),
       );
 
       if (response.statusCode == 201) {
-        // Registro exitoso
         _getData();
       } else {
-        print('Error en el registro: ${response.statusCode}');
-        print('Response body: ${response.body}');
         throw Exception('Error al registrar');
       }
     } catch (error) {
@@ -428,8 +477,7 @@ class _CrudScreenState extends State<CrudScreen> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('Error'),
-            content:
-                Text('Se produjo un error al registrar el nuevo elemento.'),
+            content: Text('Se produjo un error al registrar el elemento.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -481,12 +529,7 @@ class _CrudScreenState extends State<CrudScreen> {
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
                       DataColumn(
-                          label: Text('Precio-Dólar',
-                              style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.black))),
-                      DataColumn(
-                          label: Text('Precio-ARS',
+                          label: Text('Valor del dolar',
                               style: TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: Colors.black))),
@@ -507,14 +550,11 @@ class _CrudScreenState extends State<CrudScreen> {
                                   color: Colors.black))),
                     ],
                     rows: _data.map((item) {
-                      final double priceInARS =
-                          item['precioActualDolar'] * _exchangeRate;
+                      final double priceInCOP = _exchangeRate;
                       return DataRow(cells: [
                         DataCell(Text(item['nombreProducto'].toString(),
                             style: TextStyle(color: Colors.black))),
-                        DataCell(Text(item['precioActualDolar'].toString(),
-                            style: TextStyle(color: Colors.black))),
-                        DataCell(Text(priceInARS.toStringAsFixed(2),
+                        DataCell(Text(priceInCOP.toStringAsFixed(2),
                             style: TextStyle(color: Colors.black))),
                         DataCell(Text(item['kilos'].toString(),
                             style: TextStyle(color: Colors.black))),
@@ -535,7 +575,7 @@ class _CrudScreenState extends State<CrudScreen> {
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
                                 onPressed: () {
-                                  _eliminarItem(item);
+                                  _deleteItem(item);
                                 },
                               ),
                             ],
