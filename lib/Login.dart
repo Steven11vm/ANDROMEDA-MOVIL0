@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'Home.dart';
-import 'Register.dart';
+import 'package:untitled3/main.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  final AuthService authService;
+
+  const LoginScreen({Key? key, required this.authService}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _obscureText = true;
   late AnimationController _controller;
   late Animation<double> _animation;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -29,41 +32,69 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _controller.dispose();
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
-  void login() {
-    final email = emailController.text;
-    final password = passwordController.text;
+  Future<void> login() async {
+    if (_isLoading) return;
 
-    if (email == '1' && password == '1') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const Home()),
-      );
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red[400]),
-              const SizedBox(width: 10),
-              const Text('Error de acceso'),
-            ],
-          ),
-          content: const Text('Correo o contraseña incorrecta'),
-          backgroundColor: Colors.white,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Entendido', style: TextStyle(color: Colors.black)),
-            ),
+    setState(() {
+      _isLoading = true;
+    });
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      showErrorDialog('Por favor, complete todos los campos');
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final success = await widget.authService.login(email, password);
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/Home');
+      } else {
+        showErrorDialog('Correo o contraseña incorrecta');
+      }
+    } catch (e) {
+      showErrorDialog('Error de conexión. Intente nuevamente.');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red[400]),
+            const SizedBox(width: 10),
+            const Text('Error de acceso'),
           ],
         ),
-      );
-    }
+        content: Text(message),
+        backgroundColor: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child:
+                const Text('Entendido', style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -72,7 +103,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Fondo con efecto de brillo
           AnimatedBuilder(
             animation: _animation,
             builder: (context, child) {
@@ -91,11 +121,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               );
             },
           ),
-          // Contenido principal
           SingleChildScrollView(
             child: Column(
               children: [
-                // Logo y título
                 Container(
                   height: MediaQuery.of(context).size.height * 0.4,
                   width: double.infinity,
@@ -110,7 +138,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.2),
+                              color: const Color.fromARGB(255, 0, 0, 0)
+                                  .withOpacity(0.2),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -142,7 +171,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ],
                   ),
                 ),
-                // Formulario
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -162,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     padding: const EdgeInsets.all(30),
                     child: Column(
                       children: [
-                        // Email field
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey.shade100,
@@ -183,14 +210,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 borderSide: BorderSide.none,
                               ),
                               hintText: 'Correo electrónico',
-                              prefixIcon: const Icon(Icons.email_outlined, color: Colors.black),
+                              prefixIcon: const Icon(Icons.email_outlined,
+                                  color: Colors.black),
                               hintStyle: TextStyle(color: Colors.grey.shade600),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Password field
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.grey.shade100,
@@ -212,10 +240,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 borderSide: BorderSide.none,
                               ),
                               hintText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline, color: Colors.black),
+                              prefixIcon: const Icon(Icons.lock_outline,
+                                  color: Colors.black),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscureText ? Icons.visibility_off : Icons.visibility,
+                                  _obscureText
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: Colors.black,
                                 ),
                                 onPressed: () {
@@ -225,29 +256,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 },
                               ),
                               hintStyle: TextStyle(color: Colors.grey.shade600),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
                             ),
                           ),
                         ),
                         const SizedBox(height: 15),
-                        // Forgot password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              '',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
                         const SizedBox(height: 30),
-                        // Login button
                         GestureDetector(
-                          onTap: login,
+                          onTap: _isLoading ? null : login,
                           child: Container(
                             height: 60,
                             width: double.infinity,
@@ -282,36 +299,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         ),
                         const SizedBox(height: 30),
                         // Register option
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              ' ',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const RegScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                '',
-                                style: TextStyle(
-                                  
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

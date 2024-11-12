@@ -211,12 +211,7 @@ class _RegScreenState extends State<RegScreen> with SingleTickerProviderStateMix
                             ),
                             GestureDetector(
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginScreen(),
-                                  ),
-                                );
+                               
                               },
                               child: const Text(
                                 'Inicia sesión',

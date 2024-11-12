@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'Login.dart';
-
 import 'home.dart';
 import 'products.dart';
 import 'sale.dart';
@@ -15,11 +16,50 @@ void main() {
   runApp(const MyApp());
 }
 
+// Servicio de autenticación simplificado
+class AuthService {
+  static const String baseUrl = 'http://localhost:1056/api/users';
+  static String? _token;
+
+  Future<bool> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _token = data['token'];
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Login error: $e');
+      return false;
+    }
+  }
+
+  bool isAuthenticated() {
+    return _token != null;
+  }
+
+  void logout() {
+    _token = null;
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -29,14 +69,11 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const WelcomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        
+        '/login': (context) => LoginScreen(authService: authService),
         '/Home': (context) => const Home(),
         '/products': (context) => const ProductsPage(),
         '/sales': (context) => const SalesPage(),
         '/shopping': (context) => const PurchasesPage(),
-        '/appointment': (context) => const AppointmentPage(),
-        
       },
     );
   }
@@ -94,21 +131,6 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '');
-            },
-            child: Container(
-              height: 53,
-              width: 320,
-              decoration: BoxDecoration(
-                
-                borderRadius: BorderRadius.circular(30),
-                
-              ),
-             
-            ),
-          ),
         ]),
       ),
     );
