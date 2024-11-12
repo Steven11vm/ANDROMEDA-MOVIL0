@@ -1,19 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:ui';
 import 'package:untitled3/products.dart';
 import 'package:untitled3/sale.dart';
 import 'package:untitled3/shopping.dart';
 import 'package:untitled3/appointment.dart';
-import 'dart:ui';
 
-class Home extends StatelessWidget {
+// Modelo de Usuario
+class User {
+  final int id;
+  final String name;
+  final String email;
+  final String phone;
+  final String status;
+  final int roleId;
+
+  User({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.status,
+    required this.roleId,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'],
+      status: json['status'],
+      roleId: json['roleId'],
+    );
+  }
+}
+
+class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  User? currentUser;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'http://localhost:1056/api/users/8'), // Asumiendo ID 8 como ejemplo
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          currentUser = User.fromJson(json.decode(response.body));
+          isLoading = false;
+        });
+      } else {
+        print('Error: ${response.statusCode}');
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Error loading user: $e');
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A), // Negro más suave
+      backgroundColor: const Color(0xFF1A1A1A),
       drawer: _buildDrawer(context),
       body: SafeArea(
         child: Column(
@@ -53,7 +122,8 @@ class Home extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        // Add your gradient colors here
+                        Color(0xFF2A2A2A),
+                        Color.fromARGB(255, 34, 34, 34),
                       ],
                     ),
                   ),
@@ -68,16 +138,42 @@ class Home extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  'Mi Perfil',
-                  style: GoogleFonts.poppins(
-                    textStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
+                if (isLoading)
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                  )
+                else if (currentUser != null) ...[
+                  Text(
+                    currentUser!.name,
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                  Text(
+                    currentUser!.email,
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ] else
+                  Text(
+                    'Error al cargar usuario',
+                    style: GoogleFonts.poppins(
+                      textStyle: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -171,7 +267,8 @@ class Home extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
+                          color: const Color.fromARGB(255, 0, 0, 0)
+                              .withOpacity(0.3),
                           blurRadius: 15,
                           spreadRadius: 5,
                         ),
@@ -184,7 +281,7 @@ class Home extends StatelessWidget {
                   ),
                 ),
               ),
-              const Expanded(child: SizedBox()), // Para mantener el menú a la izquierda
+              const Expanded(child: SizedBox()),
             ],
           ),
           const SizedBox(height: 20),
@@ -283,10 +380,11 @@ class Home extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => const SalesPage()),
               );
               break;
-                case '/citas':
+            case '/citas':
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AppointmentPage()),
+                MaterialPageRoute(
+                    builder: (context) => const AppointmentPage()),
               );
               break;
             case '/compras':
@@ -298,7 +396,6 @@ class Home extends StatelessWidget {
             default:
               Navigator.pushNamed(context, moduleInfo['route']);
           }
-          
         },
         child: Container(
           decoration: BoxDecoration(
@@ -417,79 +514,81 @@ class Home extends StatelessWidget {
     return modules[index];
   }
 
-void _handleLogout(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF2A2A2A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      title: Text(
-        '¿Cerrar sesión?',
-        style: GoogleFonts.poppins(
-          textStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A2A2A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-      ),
-      content: Text(
-        '¿Estás seguro que deseas cerrar sesión?',
-        style: GoogleFonts.poppins(
-          textStyle: const TextStyle(
-            color: Colors.white70,
-            fontSize: 16,
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancelar',
-            style: GoogleFonts.poppins(
-              textStyle: TextStyle(
-                color: Colors.amber[700],
-                fontWeight: FontWeight.w500,
-              ),
+        title: Text(
+          '¿Cerrar sesión?',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        Container(
-          margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.amber[700]!,
-                Colors.amber[600]!,
-              ],
+        content: Text(
+          '¿Estás seguro que deseas cerrar sesión?',
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
             ),
-            borderRadius: BorderRadius.circular(10),
           ),
-          child: TextButton(
-            onPressed: () {
-              Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              backgroundColor: Colors.transparent,
-            ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cerrar Sesión',
+              'Cancelar',
               style: GoogleFonts.poppins(
-                textStyle: const TextStyle(
-                  color: Colors.white,
+                textStyle: TextStyle(
+                  color: Colors.amber[700],
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+          Container(
+            margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber[700]!,
+                  Colors.amber[600]!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TextButton(
+              onPressed: () {
+                // Aquí puedes agregar la lógica para limpiar las credenciales almacenadas
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/login', (Route<dynamic> route) => false);
+              },
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                backgroundColor: Colors.transparent,
+              ),
+              child: Text(
+                'Cerrar Sesión',
+                style: GoogleFonts.poppins(
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
