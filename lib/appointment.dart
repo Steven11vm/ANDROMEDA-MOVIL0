@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class AppointmentPage extends StatefulWidget {
   const AppointmentPage({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class _AppointmentPageState extends State<AppointmentPage> {
   @override
   void initState() {
     super.initState();
+    _selectedDay = _focusedDay;
     _fetchAppointments();
   }
 
@@ -34,6 +36,14 @@ class _AppointmentPageState extends State<AppointmentPage> {
       // Handle error
       print('Failed to load appointments');
     }
+  }
+
+  List<dynamic> _getAppointmentsForSelectedDay() {
+    if (_selectedDay == null) return [];
+    return _appointments.where((appointment) {
+      final appointmentDate = DateTime.parse(appointment['Date']);
+      return isSameDay(appointmentDate, _selectedDay!);
+    }).toList();
   }
 
   @override
@@ -129,13 +139,14 @@ class _AppointmentPageState extends State<AppointmentPage> {
   }
 
   Widget _buildAppointmentList() {
+    final appointmentsForSelectedDay = _getAppointmentsForSelectedDay();
     return Container(
       margin: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Citas Programadas',
+            'Citas Programadas para ${_selectedDay != null ? DateFormat('dd/MM/yyyy').format(_selectedDay!) : 'Hoy'}',
             style: GoogleFonts.poppins(
               textStyle: const TextStyle(
                 color: Colors.white,
@@ -145,15 +156,25 @@ class _AppointmentPageState extends State<AppointmentPage> {
             ),
           ),
           const SizedBox(height: 16),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: _appointments.length,
-            itemBuilder: (context, index) {
-              final appointment = _appointments[index];
-              return _buildAppointmentCard(appointment);
-            },
-          ),
+          appointmentsForSelectedDay.isEmpty
+              ? Text(
+                  'No hay citas programadas para este día.',
+                  style: GoogleFonts.poppins(
+                    textStyle: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: appointmentsForSelectedDay.length,
+                  itemBuilder: (context, index) {
+                    final appointment = appointmentsForSelectedDay[index];
+                    return _buildAppointmentCard(appointment);
+                  },
+                ),
         ],
       ),
     );

@@ -34,8 +34,8 @@ class PurchaseDetail {
       quantity: json['quantity'] ?? 0,
       unitPrice: (json['unitPrice'] ?? 0).toDouble(),
       totalPrice: (json['total_price'] ?? 0).toDouble(),
-      productId: json['productId'] ?? 0,
-      purchaseId: json['purchaseId'] ?? 0,
+      productId: json['product_id'] ?? 0,
+      purchaseId: json['shopping_id'] ?? 0,
       createdAt: json['createdAt'] ?? '',
       updatedAt: json['updatedAt'] ?? '',
     );
@@ -86,6 +86,60 @@ class Purchase {
   }
 }
 
+// Product Model
+class Product {
+  final int id;
+  final String productName;
+  final double price;
+  final int categoryId;
+
+  Product({
+    required this.id,
+    required this.productName,
+    required this.price,
+    required this.categoryId,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      productName: json['Product_Name'],
+      price: double.parse(json['Price']),
+      categoryId: json['Category_Id'],
+    );
+  }
+}
+
+// Supplier Model
+class Supplier {
+  final int id;
+  final String supplierName;
+  final String phoneNumber;
+  final String email;
+  final String address;
+  final String status;
+
+  Supplier({
+    required this.id,
+    required this.supplierName,
+    required this.phoneNumber,
+    required this.email,
+    required this.address,
+    required this.status,
+  });
+
+  factory Supplier.fromJson(Map<String, dynamic> json) {
+    return Supplier(
+      id: json['id'],
+      supplierName: json['Supplier_Name'],
+      phoneNumber: json['Phone_Number'],
+      email: json['Email'],
+      address: json['Address'],
+      status: json['status'],
+    );
+  }
+}
+
 class PurchasesPage extends StatefulWidget {
   const PurchasesPage({Key? key}) : super(key: key);
 
@@ -95,33 +149,71 @@ class PurchasesPage extends StatefulWidget {
 
 class _PurchasesPageState extends State<PurchasesPage> {
   List<Purchase> purchases = [];
+  Map<int, Product> products = {};
+  Map<int, Supplier> suppliers = {};
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchPurchases();
+    fetchData();
   }
 
-  Future<void> fetchPurchases() async {
+  Future<void> fetchData() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:1056/api/shopping'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          purchases = data.map((json) => Purchase.fromJson(json)).toList();
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load purchases');
-      }
+      await Future.wait([
+        fetchPurchases(),
+        fetchProducts(),
+        fetchSuppliers(),
+      ]);
+      setState(() {
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading purchases: $e')),
+        SnackBar(content: Text('Error loading data: $e')),
       );
+    }
+  }
+
+  Future<void> fetchPurchases() async {
+    final response = await http.get(Uri.parse('http://localhost:1056/api/shopping'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      purchases = data.map((json) => Purchase.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load purchases');
+    }
+  }
+
+  Future<void> fetchProducts() async {
+    final response = await http.get(Uri.parse('http://localhost:1056/api/products'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      products = Map.fromIterable(
+        data.map((json) => Product.fromJson(json)),
+        key: (product) => product.id,
+        value: (product) => product,
+      );
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
+
+  Future<void> fetchSuppliers() async {
+    final response = await http.get(Uri.parse('http://localhost:1056/api/suppliers'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      suppliers = Map.fromIterable(
+        data.map((json) => Supplier.fromJson(json)),
+        key: (supplier) => supplier.id,
+        value: (supplier) => supplier,
+      );
+    } else {
+      throw Exception('Failed to load suppliers');
     }
   }
 
@@ -149,56 +241,56 @@ class _PurchasesPageState extends State<PurchasesPage> {
   }
 
   Widget _buildHeader() {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          const Color(0xFF1A1A1A),
-          const Color.fromARGB(255, 2, 2, 2).withOpacity(0.3),
-        ],
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.3),
-          blurRadius: 15,
-          offset: const Offset(0, 5),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios,
-                color: Colors.amber[700],
-                size: 24,
-              ),
-              onPressed: () => Navigator.of(context).pushReplacementNamed('/Home'),
-            ),
-            Text(
-              'Compras',
-              style: GoogleFonts.playfairDisplay(
-                textStyle: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(width: 40),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1A1A1A),
+            const Color.fromARGB(255, 2, 2, 2).withOpacity(0.3),
           ],
         ),
-      ],
-    ),
-  );
-}
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.amber[700],
+                  size: 24,
+                ),
+                onPressed: () => Navigator.of(context).pushReplacementNamed('/Home'),
+              ),
+              Text(
+                'Compras',
+                style: GoogleFonts.playfairDisplay(
+                  textStyle: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 40),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPurchasesList() {
     return AnimationLimiter(
@@ -223,6 +315,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
 
   Widget _buildPurchaseCard(Purchase purchase) {
     final formatter = NumberFormat.currency(locale: 'es_MX', symbol: '\$');
+    final supplier = suppliers[purchase.supplierId];
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -333,7 +426,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Proveedor #${purchase.supplierId}',
+                      supplier != null ? supplier.supplierName : 'Proveedor desconocido',
                       style: GoogleFonts.poppins(
                         textStyle: TextStyle(
                           color: Colors.grey[400],
@@ -356,33 +449,39 @@ class _PurchasesPageState extends State<PurchasesPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  ...purchase.purchaseDetails.map((detail) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${detail.quantity}x Producto #${detail.productId}',
-                          style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+                  ...purchase.purchaseDetails.map((detail) {
+                    final product = products[detail.productId];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${detail.quantity}x ${product != null ? product.productName : 'Producto #${detail.productId}'}',
+                              style: GoogleFonts.poppins(
+                                textStyle: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                        Text(
-                          formatter.format(detail.totalPrice),
-                          style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                          Text(
+                            formatter.format(detail.totalPrice),
+                            style: GoogleFonts.poppins(
+                              textStyle: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ],
                 const Divider(color: Colors.grey),
                 Row(
@@ -425,6 +524,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
       case 'pendiente':
         return Colors.orange;
       case 'cancelada':
+      case 'anulada':
         return Colors.red;
       default:
         return Colors.grey;
