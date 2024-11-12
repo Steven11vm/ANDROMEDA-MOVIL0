@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:untitled3/products.dart';
 import 'package:untitled3/sale.dart';
 import 'package:untitled3/shopping.dart';
+import 'package:untitled3/appointment.dart';
 import 'dart:ui';
 
 class Home extends StatelessWidget {
@@ -280,6 +281,12 @@ class Home extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SalesPage()),
+              );
+              break;
+                case '/citas':
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AppointmentPage()),
               );
               break;
             case '/compras':

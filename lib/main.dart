@@ -35,6 +35,8 @@ class MyApp extends StatelessWidget {
         '/products': (context) => const ProductsPage(),
         '/sales': (context) => const SalesPage(),
         '/shopping': (context) => const PurchasesPage(),
+        '/appointment': (context) => const AppointmentPage(),
+        
       },
     );
   }
