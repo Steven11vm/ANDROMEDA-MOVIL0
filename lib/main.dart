@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'Login.dart';
-import 'Register.dart';
+
 import 'home.dart';
 import 'products.dart';
 import 'sale.dart';
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegScreen(),
+        
         '/Home': (context) => const Home(),
         '/products': (context) => const ProductsPage(),
         '/sales': (context) => const SalesPage(),
@@ -96,7 +96,7 @@ class WelcomeScreen extends StatelessWidget {
           const SizedBox(height: 30),
           GestureDetector(
             onTap: () {
-              Navigator.pushNamed(context, '/register');
+              Navigator.pushNamed(context, '');
             },
             child: Container(
               height: 53,

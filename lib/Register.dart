@@ -91,7 +91,7 @@ class _RegScreenState extends State<RegScreen> with SingleTickerProviderStateMix
                       ),
                       const SizedBox(height: 20),
                       const Text(
-                        'REGISTRARSE',
+                        '',
                         style: TextStyle(
                           fontSize: 28,
                           color: Colors.white,

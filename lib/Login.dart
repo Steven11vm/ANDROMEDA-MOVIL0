@@ -236,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           child: TextButton(
                             onPressed: () {},
                             child: const Text(
-                              '¿Olvidaste tu contraseña?',
+                              '',
                               style: TextStyle(
                                 color: Colors.black87,
                                 fontWeight: FontWeight.w600,
@@ -286,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '¿No tienes una cuenta? ',
+                              ' ',
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 14,
@@ -302,9 +302,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 );
                               },
                               child: const Text(
-                                'Regístrate aquí',
+                                '',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
